@@ -6,15 +6,20 @@
         <div class="cell" :style="cell_style(value, SourceLengh - n)" v-for="n of SourceLengh" :key="n"></div>
       </div>
     </div>
-    <div class="control">
-      <div class="button" @click="source_random(source)">random</div>
-      <div class="button" @click="selection_sort(source)">selectionSort</div>
-      <div class="button" @click="insertion_sort(source)">insertionSort</div>
-      <div class="button" @click="bubble_sort(source)">bubbleSort</div>
-      <div class="button" @click="quick_sort(source, 0, SourceLengh - 1)">quickSort</div>
+    <div class="control" v-if="gameMode === 'randomed' || gameMode === 'sorting'">
+      <select v-model="sortType">
+        <option value="selection">selectionSort</option>
+        <option value="insertion">insertionSort</option>
+        <option value="bubble">bubbleSort</option>
+        <option value="quick">quickSort</option>
+      </select>
+      <button @click="runSort" :disabled="gameMode === 'sorting'">run</button>
+    </div>
+    <div class="control" v-else>
+      <div class="button" @click="source_random(source)" :disabled="gameMode === 'randoming'">random</div>
     </div>
     <div class="range">
-      speed:{{ 501 - updateSpeed }}<br />
+      speed:
       <input type="range" max="500" min="1" v-model="updateSpeed" />
     </div>
   </div>
@@ -23,6 +28,9 @@
 <script lang="ts">
 import { Component, Vue } from "vue-property-decorator";
 
+type SortType = "selection" | "insertion" | "bubble" | "quick";
+type GameMode = "init" | "randoming" | "randomed" | "sorting";
+
 @Component({})
 export default class App extends Vue {
   source: number[] = [];
@@ -30,6 +38,27 @@ export default class App extends Vue {
   checking: number[] = [];
   SourceLengh = 80;
   updateSpeed = 70;
+  sortType: SortType = "selection";
+  gameMode: GameMode = "init";
+
+  async runSort() {
+    this.gameMode = "sorting";
+    switch (this.sortType) {
+      case "selection":
+        await this.selection_sort(this.source);
+        break;
+      case "insertion":
+        await this.insertion_sort(this.source);
+        break;
+      case "bubble":
+        await this.bubble_sort(this.source);
+        break;
+      case "quick":
+        await this.quick_sort(this.source, 0, this.SourceLengh - 1);
+        break;
+    }
+    this.gameMode = "init";
+  }
 
   format_number(num: number): string {
     if (num < 10) return `0${num}`;
@@ -153,11 +182,13 @@ export default class App extends Vue {
   }
 
   async source_random(arr: number[]): Promise<void> {
+    this.gameMode = "randoming";
     for (let i = arr.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       this.swap(i, j, arr);
       await this.update_source(arr);
     }
+    this.gameMode = "randomed";
   }
 
   make_source(length: number): number[] {
